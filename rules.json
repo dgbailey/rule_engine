@@ -1,0 +1,9 @@
+{
+    "rules":[
+        {
+            "body":"I'm an android specific issue related to specifying releases",
+            "deps":{"sdk":["ios"],"issue":["releases.environment"]},
+            "priority":10
+        }
+    ]
+}
