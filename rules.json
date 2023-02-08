@@ -1,8 +1,13 @@
 {
     "rules":[
         {
-            "body":"I'm an android specific issue related to specifying releases",
-            "deps":{"sdk":["ios"],"issue":["releases.environment"]},
+            "body":"I'm an ios specific issue related to specifying environments",
+            "deps":{"sdk":["ios"],"issue":["release_health.environment.none"]},
+            "priority":10
+        },
+        {
+            "body":"I'm a mobile specific issue related to not having ownership.",
+            "deps":{"sdk":["mobile"],"issue":["ownership.none"]},
             "priority":10
         }
     ]
