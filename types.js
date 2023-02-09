@@ -1,34 +1,6 @@
-
-
-const SDK = {
-    mobile:'mobile',
-    javascript:"javascript",
-    ios:"ios",
-    backend:"backend"
-}
 const EVENT_TYPES = {
     error:'error',
     transaction:'transaction'
-}
-
-const ISSUE_TYPES = {
-    'release_health.versioning':'release_health.versioning',
-    'release_health.environment.none':'release_health.environment.none',
-    'quota.high':'quota.high',
-    'quita.low':'quota.low',
-    'assignment.some':'assignment.some',
-    'assignment.none':'assignment.none',
-    'ownership.some':'ownership.some',
-    'ownership.none':'ownership.none',
-    'dashboard.none':'dashboard.some',
-    'alerts.metric.none':'alerts.metric.none',
-    'alerts.issue.none':'alerts.issue.none',
-    'integrations.vcs.none':'integrations.vcs.none',
-}
-
-const SDK_GROUP = {
-    mobile:['android','ios','cordova'],
-    backend:['python','java','go']
 }
 
 const DEPENDENCY_TYPES = {
@@ -37,49 +9,24 @@ const DEPENDENCY_TYPES = {
     issue:'issue',
     account:'account',
     team:'team',
-
 }
 
 
-const {RULES:rawRules} = require('./rules');
-console.log(rawRules);
+const {RULES:rawRules, RULES} = require('./rules');
 
-// class Rule {
-//     /**
-//      * @param {string} body The outbound text
-//      * @param {Object} deps The DEPENDENCY_TYPES of the outbound)
-//      * @param {int} priority The integer priority 0 ... 10
-//      */
 
-//     //TODO: static utilities
-//     constructor(body,deps,priority){
-//         this.deps = deps;
-//         this.body = body;
-//         this.priority = priority ?? 10;
-//     }
-
-// }
-
-// class RuleParser {
-//     constructor(){
-
-//     }
-// }
 
 class Engine {
     /**
      * 
      * @param {array} ruleSet [] Rule
-     * @param {object} accountData An object describing raw & computed account data
      * @param {array} plugins [] Plugin
      */
-    constructor(rawRuleSet,accountData,plugins){
+    constructor(rawRuleSet,plugins){
         this.ruleSet = this.parseRuleSyntax(rawRuleSet);
-        this.accountData = accountData;
         this.plugins = plugins;
     }
 
-    //TODO: Evalute each rule's dependencies against accountData
 
     parseRuleSyntax(rawRuleSet){
         //do we need to check for syntax errors or dupes? RuleParser?
@@ -88,23 +35,24 @@ class Engine {
         
     }
 
-    process(){
+    process(accountData){
         /**
+         * @param {object} accountData An object describing raw & computed account data 
          * return [] Rule Returns applicable rules
          */
         let output = [];
+    
         for(const r of this.ruleSet){
             console.log(r.deps);
-            if(this.applyPlugins(this.plugins,r.deps) === true){
-                //add rule to some output w/priority
+            if(this.applyPlugins(accountData,this.plugins,r.deps) === true){
+                //TODO:add rule to output in/priority order
                 output.push(r);
             }
         }
         return output
     }
-    //Should accountData just have getters and setters
-
-    applyPlugins(pluginArray,ruleDeps){
+   
+    applyPlugins(accountData,pluginArray,ruleDeps){
        
         // any applicable plugins that return false violate dependency reqs
         // perhaps register plugins as check agains missing (if rules specify)
@@ -112,8 +60,7 @@ class Engine {
         for (let plugin of pluginArray){
             //this leaves the potential for some rules to not be applied if plugin is missing from [Plugins]
             if(plugin.dependency in ruleDeps){
-               result = result && plugin.evaluate(this.accountData,ruleDeps[plugin.dependency]);
-               //perhaps plugin can ve stateless meh we need state
+               result = result && plugin.evaluate(accountData,ruleDeps[plugin.dependency]);
                console.log('result',result);
             }
             
@@ -123,6 +70,27 @@ class Engine {
     }
 }
 
+const ISSUE_TYPES = {
+    'release_health.versioning':'release_health.versioning',
+    'release_health.environment.none':'release_health.environment.none',
+    'quota.txn.high':'quota.txn.high',
+    'quota.txn.low':'quota.txn.low',
+    'quota.txn.base':'quota.txn.base',
+    'assignment.some':'assignment.some',
+    'assignment.none':'assignment.none',
+    'ownership.some':'ownership.some',
+    'ownership.none':'ownership.none',
+    'dashboard.none':'dashboard.some',
+    'alerts.metric.none':'alerts.metric.none',
+    'alerts.issue.none':'alerts.issue.none',
+    'integrations.vcs.none':'integrations.vcs.none',
+    'artifacts.sourcemaps.none':'artifacts.sourcemaps.none'
+}
+
+//Plugin
+/**
+ * fn evaluate(accountData, ruleDepsArray) bool
+ */
 
 class IssuePlugin {
     
@@ -139,9 +107,10 @@ class IssuePlugin {
 
     
         let result = false;
-        //For each in issue rule, query the data api to assess
+       
         for (let issueType of issueDepsArray){
             //TODO:look for commonalities to optimize this evaluation in future
+            //if plugin isn't defined but rule dependency is present this should throw
            console.log('issueType',issueType)
             if (issueType === ISSUE_TYPES["dashboard.none"]){
 
@@ -166,11 +135,33 @@ class IssuePlugin {
                
                 if (!accountData.hasIntegrationVCS()) result = true;
             }
+            else if(issueType === ISSUE_TYPES["artifacts.sourcemaps.none"]){
+               
+                if (!accountData.hasSourcemaps()) result = true;
+            }
+            else if(issueType === ISSUE_TYPES["quota.txn.base"]){
+               
+                if (accountData.hasBaseTransactions()) result = true;
+            }
             else throw new Error(`Issue plugin did not find matching Issue dep: ${issueType}`);
         }
         return result
     }
 }
+
+const SDK_TYPES = {
+    mobile:'mobile',
+    javascript:'javascript',
+    ios:'ios',
+    backend:'backend',
+    frontend:'frontend'
+}
+const SDK_GROUP = {
+    mobile:['android','ios','react-native'],
+    backend:['python','java','golang','.NET'],
+    frontend:['javascript','javascript.react','javascript.vue']
+}
+
 
 class SdkPlugin {
     /**
@@ -179,9 +170,6 @@ class SdkPlugin {
     constructor(){
         this.dependency = DEPENDENCY_TYPES.sdk;
     }
-    //if it is mobile use the superset
-    //else go through 
-   //set equivalence or subset
 
 
    evaluate(accountData,ruleDepsArray){
@@ -189,30 +177,32 @@ class SdkPlugin {
         * 
         * @return {boolean} Returns true or false if dependency present
         */
-    //check set equivalence or subset
-    //assumes no dupes
+   
+    
     console.log("applying plugin",this.dependency,accountData,ruleDepsArray)
     
-    let expandedSet = new Set();
+    let expandedSet = new Set();//duplicates, user error?
 
     let accountSdks = accountData.getSdks();
     function helper(accountSdks,value){
         return accountSdks.includes(value);
     }
-    if(ruleDepsArray.includes(SDK.mobile)){
+    if(ruleDepsArray.includes(SDK_TYPES.mobile)){
         console.log("has mobile");
         SDK_GROUP.mobile.forEach(v => {
             if(helper(accountSdks,v)) expandedSet.add(v);
         });
     }
-    if(ruleDepsArray.includes(SDK.backend)){
+    if(ruleDepsArray.includes(SDK_TYPES.backend)){
        SDK_GROUP.backend.forEach(v => {
         if(helper(accountSdks,v)) expandedSet.add(v);
     });
     }
     ruleDepsArray.forEach(v => {
-        if (!SDK.mobile === v) expandedSet.add(v);
-        if (!SDK.backend === v) expandedSet.add(v);
+        console.log('types',v)
+        //thought about sdk.group as a new dependency type to avoid this unnecessary step removing pollution 
+        if (SDK_TYPES.mobile !== v && SDK_TYPES.backend !== v && SDK_TYPES.frontend !== v) expandedSet.add(v);
+        
     });
 
     const a = Array.from(expandedSet);
@@ -241,8 +231,11 @@ const mockAccount = {
     hasMetricAlert:() => false,
     hasIssueAlert:() => false,
     hasIntegrationVCS:() => false,
+    hasSourcemaps:() => false,
+    hasBaseTransactions:() => true,
 }
-const plugins = [new SdkPlugin(), new IssuePlugin()]; //if plugin isn't defined but rule is present this should throw
-const e = new Engine(rawRules,mockAccount,plugins);
-console.log("outbound output", e.process());
+const plugins = [new SdkPlugin(), new IssuePlugin()]; 
+const e = new Engine(rawRules,plugins);
+console.log("outbound output", e.process(mockAccount));
 
+exports.Engine = e;
