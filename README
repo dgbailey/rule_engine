@@ -5,7 +5,7 @@ const {Engine} = require('./types.js');
 
 let accountInfo = await fetchInfo(//stuff);
 
-let auditResult = Engine.process()
+let auditResult = Engine.process(accountInfo);
 
 ```
 
