@@ -11,20 +11,18 @@ const DEPENDENCY_TYPES = {
     team:'team',
 }
 
-
-const {RULES:rawRules, RULES} = require('./rules');
-
-
-
 class Engine {
     /**
      * 
      * @param {array} ruleSet [] Rule
      * @param {array} plugins [] Plugin
+     * @param {bool} debug Flag for debug output
      */
-    constructor(rawRuleSet,plugins){
-        this.ruleSet = this.parseRuleSyntax(rawRuleSet);
-        this.plugins = plugins;
+    constructor(engineOptions){
+        
+        this.ruleSet = this.parseRuleSyntax(engineOptions.ruleSet);
+        this.plugins = engineOptions.plugins;
+        this.debug = engineOptions.debug
     }
 
 
@@ -43,7 +41,7 @@ class Engine {
         let output = [];
     
         for(const r of this.ruleSet){
-            console.log(r.deps);
+            this.debug && console.debug(r.deps);
             if(this.applyPlugins(accountData,this.plugins,r.deps) === true){
                 //TODO:add rule to output in/priority order
                 output.push(r);
@@ -61,7 +59,7 @@ class Engine {
             //this leaves the potential for some rules to not be applied if plugin is missing from [Plugins]
             if(plugin.dependency in ruleDeps){
                result = result && plugin.evaluate(accountData,ruleDeps[plugin.dependency]);
-               console.log('result',result);
+               this.debug && console.debug('result',result);
             }
             
         }
@@ -69,7 +67,7 @@ class Engine {
 
     }
 }
-
+//on demand spend? & noise?
 const ISSUE_TYPES = {
     'release_health.versioning':'release_health.versioning',
     'release_health.environment.none':'release_health.environment.none',
@@ -80,11 +78,12 @@ const ISSUE_TYPES = {
     'assignment.none':'assignment.none',
     'ownership.some':'ownership.some',
     'ownership.none':'ownership.none',
-    'dashboard.none':'dashboard.some',
+    'dashboard.none':'dashboard.none',
     'alerts.metric.none':'alerts.metric.none',
     'alerts.issue.none':'alerts.issue.none',
     'integrations.vcs.none':'integrations.vcs.none',
-    'artifacts.sourcemaps.none':'artifacts.sourcemaps.none'
+    'artifacts.sourcemaps.none':'artifacts.sourcemaps.none',
+    'sdk.update.major':'sdk.update.major'
 }
 
 //Plugin
@@ -103,7 +102,6 @@ class IssuePlugin {
          * 
          * @return {boolean} Returns true or false if dependency present
          */
-        console.log("applying plugin",this.dependency,accountData,issueDepsArray);
 
     
         let result = false;
@@ -111,7 +109,6 @@ class IssuePlugin {
         for (let issueType of issueDepsArray){
             //TODO:look for commonalities to optimize this evaluation in future
             //if plugin isn't defined but rule dependency is present this should throw
-           console.log('issueType',issueType)
             if (issueType === ISSUE_TYPES["dashboard.none"]){
 
             }
@@ -142,6 +139,14 @@ class IssuePlugin {
             else if(issueType === ISSUE_TYPES["quota.txn.base"]){
                
                 if (accountData.hasBaseTransactions()) result = true;
+            }
+            else if(issueType === ISSUE_TYPES["dashboard.none"]){
+               
+                if (!accountData.hasDashboards()) result = true;
+            }
+            else if(issueType === ISSUE_TYPES["assignment.none"]){
+               
+                if (!accountData.hasAssignment()) result = true;
             }
             else throw new Error(`Issue plugin did not find matching Issue dep: ${issueType}`);
         }
@@ -179,8 +184,6 @@ class SdkPlugin {
         */
    
     
-    console.log("applying plugin",this.dependency,accountData,ruleDepsArray)
-    
     let expandedSet = new Set();//duplicates, user error?
 
     let accountSdks = accountData.getSdks();
@@ -188,7 +191,6 @@ class SdkPlugin {
         return accountSdks.includes(value);
     }
     if(ruleDepsArray.includes(SDK_TYPES.mobile)){
-        console.log("has mobile");
         SDK_GROUP.mobile.forEach(v => {
             if(helper(accountSdks,v)) expandedSet.add(v);
         });
@@ -199,16 +201,13 @@ class SdkPlugin {
     });
     }
     ruleDepsArray.forEach(v => {
-        console.log('types',v)
         //thought about sdk.group as a new dependency type to avoid this unnecessary step removing pollution 
         if (SDK_TYPES.mobile !== v && SDK_TYPES.backend !== v && SDK_TYPES.frontend !== v) expandedSet.add(v);
         
     });
 
     const a = Array.from(expandedSet);
-    console.log('expanded set',a);
     if(a.length !== 0 && isSubset(accountSdks,a)){
-        console.log('returning true for expanded set')
         return true;
     }
     return false
@@ -233,9 +232,17 @@ const mockAccount = {
     hasIntegrationVCS:() => false,
     hasSourcemaps:() => false,
     hasBaseTransactions:() => true,
+    hasDashboards:() => false,
+    hasAssignment:() => false,
 }
-const plugins = [new SdkPlugin(), new IssuePlugin()]; 
-const e = new Engine(rawRules,plugins);
-console.log("outbound output", e.process(mockAccount));
+const {RULES:rawRules} = require('./rules');
+const plugins = [new SdkPlugin(), new IssuePlugin()];
+const EngineOptions = {
+    debug:false,
+    ruleSet:rawRules,
+    plugins:plugins
+} 
+const e = new Engine(EngineOptions);
+// console.log("outbound output", e.process(mockAccount));
 
 exports.Engine = e;
