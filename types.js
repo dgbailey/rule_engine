@@ -21,10 +21,9 @@ const ISSUE_TYPES = {
     'ownership.some':'ownership.some',
     'ownership.none':'ownership.none',
     'dashboard.none':'dashboard.some',
-    //alerts.metric.none
-    //alerts.issue.none
-    //integrations.vcs.none
-    //integrations.alerting.none
+    'alerts.metric.none':'alerts.metric.none',
+    'alerts.issue.none':'alerts.issue.none',
+    'integrations.vcs.none':'integrations.vcs.none',
 }
 
 const SDK_GROUP = {
@@ -42,8 +41,8 @@ const DEPENDENCY_TYPES = {
 }
 
 
-const rawRules = require('./rules.json');
-
+const {RULES:rawRules} = require('./rules');
+console.log(rawRules);
 
 // class Rule {
 //     /**
@@ -85,7 +84,7 @@ class Engine {
     parseRuleSyntax(rawRuleSet){
         //do we need to check for syntax errors or dupes? RuleParser?
         
-        return rawRuleSet['rules'];
+        return rawRuleSet
         
     }
 
@@ -138,11 +137,11 @@ class IssuePlugin {
          */
         console.log("applying plugin",this.dependency,accountData,issueDepsArray);
 
-        //what api do I need from account data to evaluate each type of issue? A really long switch 
-        //My deps array dictates the issues?
+    
         let result = false;
         //For each in issue rule, query the data api to assess
         for (let issueType of issueDepsArray){
+            //TODO:look for commonalities to optimize this evaluation in future
            console.log('issueType',issueType)
             if (issueType === ISSUE_TYPES["dashboard.none"]){
 
@@ -154,6 +153,18 @@ class IssuePlugin {
             else if(issueType === ISSUE_TYPES["ownership.none"]){
                
                 if (!accountData.hasOwnership()) result = true;
+            }
+            else if(issueType === ISSUE_TYPES["alerts.metric.none"]){
+               
+                if (!accountData.hasMetricAlert()) result = true;
+            }
+            else if(issueType === ISSUE_TYPES["alerts.issue.none"]){
+               
+                if (!accountData.hasIssueAlert()) result = true;
+            }
+            else if(issueType === ISSUE_TYPES["integrations.vcs.none"]){
+               
+                if (!accountData.hasIntegrationVCS()) result = true;
             }
             else throw new Error(`Issue plugin did not find matching Issue dep: ${issueType}`);
         }
@@ -226,7 +237,10 @@ function isSubset(dep1,dep2){
 const mockAccount = {
     getSdks:() => ['android','javascript','java'],
     hasOwnership:() => false,
-    hasEnv:() => false
+    hasEnv:() => false,
+    hasMetricAlert:() => false,
+    hasIssueAlert:() => false,
+    hasIntegrationVCS:() => false,
 }
 const plugins = [new SdkPlugin(), new IssuePlugin()]; //if plugin isn't defined but rule is present this should throw
 const e = new Engine(rawRules,mockAccount,plugins);
