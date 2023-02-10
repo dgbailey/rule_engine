@@ -8,13 +8,13 @@
 // }
 const RULES = [
         {
-            "body":"Specifying environments help to better understand & filter issues during your phased rollout.",
+            "body":"Specifying environments in SDK initialization can help you better understand & filter issues during your phased rollout.",
             "deps":{"sdk":["mobile"],"issue":["release_health.environment.none"]},
             "priority":10
         },
         {
-            "body":"Improve your session tracking with real time session based alerting. Get notified ",
-            "deps":{"sdk":["mobile"],"issue":["alerts.metric.none"]},
+            "body":"Crash free session tracking can be enhanced with real time session based alerting. Get notified via your preferred tool by leveraging out integrations platform.",
+            "deps":{"sdk":["mobile"],"issue":["alerts.metric.none","integrations.alerting.none"]},
             "priority":10
         }
         ,
@@ -46,6 +46,11 @@ const RULES = [
         {
             "body":"Issues are best owned within Sentry. Assigning issues routes notifications and issues directly to those most apt to fix them. You can even have Sentry do this automatically for you.",
             "deps":{"issue":['assignment.none']},
+            "priority":10
+        },
+        {
+            "body":"Dropping events can impact your visibility of issues. Consider using Discover to triage your noisiest issues or identify other good candidates for filtering.",
+            "deps":{"issue":['quota.dropped.high']},
             "priority":10
         },
         

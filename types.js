@@ -3,6 +3,11 @@ const EVENT_TYPES = {
     transaction:'transaction'
 }
 
+const USER_TYPES = {
+    'team.size.small':'team.size.small',
+    'team.size.large':'team.size.large',
+}
+
 const DEPENDENCY_TYPES = {
     sdk:'sdk',
     event:'event',
@@ -74,6 +79,9 @@ const ISSUE_TYPES = {
     'quota.txn.high':'quota.txn.high',
     'quota.txn.low':'quota.txn.low',
     'quota.txn.base':'quota.txn.base',
+    'quota.dropped.high':'quota.dropped.high',
+    'quota.errors.high':'quota.errors.high',
+    'quota.errors.low':'quota.erros.low',
     'assignment.some':'assignment.some',
     'assignment.none':'assignment.none',
     'ownership.some':'ownership.some',
@@ -82,8 +90,10 @@ const ISSUE_TYPES = {
     'alerts.metric.none':'alerts.metric.none',
     'alerts.issue.none':'alerts.issue.none',
     'integrations.vcs.none':'integrations.vcs.none',
+    'integrations.alerting.none':'integrations.alerting.none',
     'artifacts.sourcemaps.none':'artifacts.sourcemaps.none',
-    'sdk.update.major':'sdk.update.major'
+    'sdk.update.major':'sdk.update.major',
+    
 }
 
 //Plugin
@@ -147,6 +157,14 @@ class IssuePlugin {
             else if(issueType === ISSUE_TYPES["assignment.none"]){
                
                 if (!accountData.hasAssignment()) result = true;
+            }
+            else if(issueType === ISSUE_TYPES["quota.dropped.high"]){
+               
+                if (accountData.hasDropped()) result = true;
+            }
+            else if(issueType === ISSUE_TYPES["integrations.alerting.none"]){
+               
+                if (accountData.hasIntegrationsAlerting()) result = true;
             }
             else throw new Error(`Issue plugin did not find matching Issue dep: ${issueType}`);
         }
@@ -230,10 +248,12 @@ const mockAccount = {
     hasMetricAlert:() => false,
     hasIssueAlert:() => false,
     hasIntegrationVCS:() => false,
+    hasIntegrationsAlerting:() => false,
     hasSourcemaps:() => false,
     hasBaseTransactions:() => true,
     hasDashboards:() => false,
     hasAssignment:() => false,
+    hasDropped:() => true,
 }
 const {RULES:rawRules} = require('./rules');
 const plugins = [new SdkPlugin(), new IssuePlugin()];
@@ -243,6 +263,6 @@ const EngineOptions = {
     plugins:plugins
 } 
 const e = new Engine(EngineOptions);
-// console.log("outbound output", e.process(mockAccount));
+console.log("outbound output", e.process(mockAccount));
 
 exports.Engine = e;
