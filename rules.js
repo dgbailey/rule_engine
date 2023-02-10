@@ -6,6 +6,8 @@
 //      * {int} priority The integer priority 0 ... 10
 //      */
 // }
+
+//Rules may be limited by the stage of account Data api. We could have a separate bank for ideation & manual lookup.
 const RULES = [
         {
             "body":"Specifying environments in SDK initialization can help you better understand & filter issues during your phased rollout.",
