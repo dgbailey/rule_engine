@@ -2,10 +2,10 @@
 ```
 //chrome-extension.js
 
-const {Engine} = require('./types.js');
+const {RULE_ENGINE} = require('./engine.js');
 
 let accountInfo = await fetchInfo(//stuff);
 
-let outReach = Engine.process(accountInfo);
+let outReach = RULE_ENGINE.process(accountInfo);
 
 ```

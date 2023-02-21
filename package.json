@@ -1,0 +1,20 @@
+{
+  "name": "rule_engine",
+  "version": "1.0.0",
+  "description": "``` //chrome-extension.js",
+  "main": "engine.js",
+  "type": "module",
+  "scripts": {
+    "test": "test"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/dgbailey/rule_engine.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/dgbailey/rule_engine/issues"
+  },
+  "homepage": "https://github.com/dgbailey/rule_engine#readme"
+}
