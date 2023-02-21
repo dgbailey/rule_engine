@@ -25,7 +25,7 @@ import { ISSUE_TYPES, ORG_ISSUE_TYPES } from "./types.js"
 
 // Dependencies
 /**
- * These are any keys that are specified within deps:{}. They function to identify dependencies of the rule. The currently map to types of Extensions which specify the logic for evaluating dependencies agains account data. 
+ * These are any keys that are specified within deps:{}. They function to identify dependencies of the rule. The currently map to types of Extensions which specify the logic for evaluating dependencies against account data. 
  */
 
 // Issues:

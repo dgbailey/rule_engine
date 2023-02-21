@@ -2,7 +2,7 @@
 ```
 //chrome-extension.js
 
-const {RULE_ENGINE} = require('./engine.js');
+const {RULE_ENGINE} = import('./engine.js');
 
 let accountInfo = await fetchInfo(//stuff);
 

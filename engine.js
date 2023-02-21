@@ -160,7 +160,7 @@ export class Engine {
        // if no tier 1 grouping assume project level outputs being written conjunctive. 
        // OR check for org level and projct level issue mix & incompatibilities
        // 
-        let output = {};
+        let output = {'org':{}};
         const projects = accountData.org.projects;
         const org = accountData.org;
        
@@ -170,13 +170,13 @@ export class Engine {
                 if( !aggregator[project.name]) aggregator[project.name] = [];
                 aggregator[project.name].push(rule);
                
-            }else{
-                if(aggregator[ruleType]){
-                    aggregator[ruleType].push(rule);
-                }else{
-                    aggregator[ruleType] = [];
-                    aggregator[ruleType].push(rule);
+            }else if(ruleType === DEPENDENCY_TYPES.org){
+                //body will uniquely identify an org level rule. This will dedupe.
+                if(!output.org[rule.body]){
+                    output.org[rule.body] = rule;
                 }
+            }else{
+                throw Error("Rule top level dep type not found.")
             }
             
         }
@@ -194,7 +194,7 @@ export class Engine {
              
                 if(result){
                 
-                    outputHelper(ruleType,output,{body:r.body,priority:r.priority},p);
+                    outputHelper(ruleType,output,{body:r.body,deps:r.deps,priority:r.priority},p);
 
                 } 
                     
