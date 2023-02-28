@@ -1,4 +1,4 @@
-import { EVENT_TYPES, USER_TYPES, DEPENDENCY_TYPES, ISSUE_TYPES, ORG_ISSUE_TYPES } from './types.js';
+import { EVENT_TYPES, USER_TYPES, DEPENDENCY_TYPES, SDK_TYPES, ISSUE_TYPES, ORG_ISSUE_TYPES, SDK_ISSUE_TYPES } from './types.js';
 import {RULES} from './rules.js';
 /**
  * Rule engine that processes Account data
@@ -13,19 +13,27 @@ export class Node {
     
     static bindExtension(extName,parent,extDirectory){
         //bind extension based on parent dependency
+        //convenience logic for making rule dependency specification easier. 
         
         
         if(parent != null){
-           
+            
+            // if(!extDirectory[extName]){
+            //     console.log(`FAILURE: Attempting to bind extension: ${extName}`)
+            // }else{
+            //     console.log(`SUCCESS: Attempting to bind extension: ${extName}`) 
+            // }
             switch(extName){
-                
+               
                 case DEPENDENCY_TYPES.issue:
                     if(parent.name === DEPENDENCY_TYPES.org) return extDirectory[DEPENDENCY_TYPES.org_issue];
                     else if(parent.name === DEPENDENCY_TYPES.project) return extDirectory[DEPENDENCY_TYPES.project_issue];
+                    else if(parent.name === DEPENDENCY_TYPES.sdk) return extDirectory[DEPENDENCY_TYPES.sdk_issue]
                     break;
                 default:
                     return extDirectory[extName]
             }
+            
         }
     }
     constructor(deps,body,priority,name,parent,extension){
@@ -74,19 +82,22 @@ export class Node {
    
     evaluate(accountData){
       
-        //each node evaluates itself against an associated extension + account data
-        //each node can evaluate itself against results of children
+        /* Each node evaluates itself against an associated extension + account data.
         
-        //very first node has no extensions? if name is root?
-        
+         Rule object keys are never deleted or added to after creation. Sibling order is deterministic during evaluation.
+        */
+
+        // console.log(`evaluating ${this.body}`)
         let resultSelf = this.extension.evaluate(accountData,this.deps,{node:this});
-        if(!resultSelf){
-            //exit early
-            return resultSelf
+        if(resultSelf !== true){
+            //exit early before child eval
+             return resultSelf
         }
-        //now that extensions can take context should they use this to make more sophisticated decisions? Like looking at the name of a parent node for example to make org vs. project decisions
+      
         for (let c of this.children){
             resultSelf = resultSelf & c.evaluate(accountData);
+           
+            if(!resultSelf) break;//exit early before next sibling eval
         }
         return resultSelf;
     }
@@ -145,21 +156,7 @@ export class Engine {
          * @param {Array} projectData An array of Projects
          * @return {Object} An object {projectId:[Rule, ...]}
          */
-        //process all account data instead of splitting
-        //TODO: modify extensions to expect the API shape //TODO: This currently assumes no processing errors and a reliable dataset
-        //TODO: Org apis & project apis will differ. Need a way of idenfitying this when applying rules
-        // Specify at the Rule level: org | project
-        // Have the engine guess? 
-       // Not sure where to specify the organization vs project difference. if we do it in the rule we need to link this detail directly to the rule. Adding another dep array would only 
-       // You run into trouble with descriptors being mismatched with issues. If I specify [org, project] for a dep array which issues match to these specifically? Matching sdk types currently assumes you either write separate rules or it is a logical conjunctive (AND). They author by nature isn't querying for data, they are writing content for a set of characteristics. The act seems to be naturally conjuctive. 
-       //I guess it follows that any dependencies listed are all or nothing. [project, org] is not all or nothing. It is not evaluated in the same way as an sdk.
-       // So what rule do I evaluate & what api do I call?
-
-       //project vs org deps (separated at the api level)
-       // deps:{ project:[sdk:[],issue:[]], org:[ issue:[]] }
-       // if no tier 1 grouping assume project level outputs being written conjunctive. 
-       // OR check for org level and projct level issue mix & incompatibilities
-       // 
+      
         let output = {'org':{}};
         const projects = accountData.org.projects;
         const org = accountData.org;
@@ -187,11 +184,11 @@ export class Engine {
             //bind APIS in expected shape for extensions that may need access to both.
             
             const ruleType = r.ruleType();
-            
+           
             for (const p of projects){
                 
                 const result = r.evaluate(this._bindAPIS(p,org));
-             
+
                 if(result){
                 
                     outputHelper(ruleType,output,{body:r.body,deps:r.deps,priority:r.priority},p);
@@ -216,6 +213,97 @@ export class OrgExtension {
     }
 }
 
+export class SdkPlatformExtension {
+    static dependency = DEPENDENCY_TYPES.sdk_platform;
+    constructor(){
+
+    }
+
+   evaluate(accountData,ruleDepsArray,context={}){
+       /**
+        * //TODO:port over logic from parent SDK extensino
+        //make sure rules reflect the new hierarchy
+        //Add platform extension to exported extensions
+        //test
+        * @return {boolean} Returns true or false if dependency present
+        */
+
+    let result = false; 
+    let expandedSet = new Set();//duplicates, user error?
+
+    let accountSdks = accountData.PROJECT_API.getSdks();
+    function helper(accountSdks,value){
+        return accountSdks.includes(value);
+    }
+    if(ruleDepsArray.includes(SDK_TYPES.mobile)){
+        
+        SDK_GROUP.mobile.forEach(v => {
+            if(helper(accountSdks,v)) expandedSet.add(v);
+        });
+    }
+    if(ruleDepsArray.includes(SDK_TYPES.backend)){
+       SDK_GROUP.backend.forEach(v => {
+        if(helper(accountSdks,v)) expandedSet.add(v);
+    });
+    }
+   
+    ruleDepsArray.forEach(v => {
+        //thought about sdk.group as a new dependency type to avoid this unnecessary step removing pollution 
+        if (SDK_TYPES.mobile !== v && SDK_TYPES.backend !== v && SDK_TYPES.frontend !== v) expandedSet.add(v);
+        
+    });
+
+    const a = Array.from(expandedSet);
+    if(a.length !== 0 && isSubset(accountSdks,a)){
+        result = true;
+    }
+   
+    return result
+
+    
+   }
+}
+//SO we have a project level issue sdk.integrations.none
+/**
+ * Where do we evaluate this? 
+ */
+export class SdkIssueExtension {
+    static dependency = DEPENDENCY_TYPES.sdk_issue;
+    constructor(){
+
+    }
+    
+    evaluate(accountData, issueDepsArray, context={}){
+        let result = false;
+        
+        for (let issueType of issueDepsArray){
+           
+            switch(issueType){
+                case SDK_ISSUE_TYPES["sdk.android.instrumentation.http_errors.none"]:
+                    if (!accountData.PROJECT_API.hasAndroidHttp()) result = true;
+                    break;
+                case SDK_ISSUE_TYPES["sdk.android.instrumentation.db.none"]:
+                    if (!accountData.PROJECT_API.hasAndroidDb()) result = true;
+                    break;
+                case SDK_ISSUE_TYPES["sdk.android.instrumentation.fileio.none"]:
+                    if (!accountData.PROJECT_API.hasFileIo()) result = true;
+                    break;
+                case SDK_ISSUE_TYPES["sdk.android.instrumentation.fragments.none"]:
+                    if (!accountData.PROJECT_API.hasFragments()) result = true;
+                    break;
+                case SDK_ISSUE_TYPES["sdk.android.instrumentation.okhttp.none"]:
+                    if (!accountData.PROJECT_API.hasOkhttp()) result = true;
+                    break;
+                default:
+                    throw Error(`SDK_ISSUE_TYPE not found for ${issueType} in ${issueDepsArray}`)
+            }
+           
+        }
+        return result
+       
+    }
+}
+
 //Extension
 /**
  * fn evaluate(accountData, ruleDepsArray) bool
@@ -235,6 +323,14 @@ export class OrgIssueExtension {
         for (let issueType of issueDepsArray){
            if(issueType === ORG_ISSUE_TYPES['ecosystem.vcs.none']){
             if(!accountData.ORG_API.hasIntegrationVCS()) result = true;
+           }
+           else if(issueType === ORG_ISSUE_TYPES["ecosystem.alerting.none"]){
+               if(!accountData.ORG_API.hasIntegrationsAlerting()) result = true;
+           }
+           else if(issueType === ORG_ISSUE_TYPES["ecosystem.sso.none"]){
+               if(!accountData.ORG_API.hasIntegrationsSSO()) result = true;
+           }else {
+               throw Error("Issue type not found for ORG_ISSUE extension")
            }
            
         }
@@ -260,7 +356,7 @@ export class RootExtension {
 }
 
 export class ProjectIssueExtension {
-    //issue dependency needs a check at the extension of the history object to choose correct issue extension
+  
     static dependency = DEPENDENCY_TYPES.project_issue;
     
     constructor(){
@@ -286,6 +382,18 @@ export class ProjectIssueExtension {
             //if issue type is defined but not present in extension this should throw
             if (issueType === ISSUE_TYPES["dashboard.none"]){
 
+            }
+            else if (issueType === ISSUE_TYPES["releases.session_tracking.none"]){
+                if(!accountData.PROJECT_API.hasSessions()) result = true; 
+            }
+            else if (issueType === ISSUE_TYPES["releases.versioning.none"]){
+                if(!accountData.PROJECT_API.hasReleases()) result = true; 
+            }
+            else if (issueType === ISSUE_TYPES["releases.artifacts.dsyms.none"]){
+                if(!accountData.PROJECT_API.hasDsyms()) result = true; 
+            }
+            else if (issueType === ISSUE_TYPES["releases.artifacts.proguard.none"]){
+                if(!accountData.PROJECT_API.hasProguard()) result = true; 
             }
             else if (issueType === ISSUE_TYPES["release_health.environment.none"]){
                 
@@ -337,13 +445,7 @@ export class ProjectIssueExtension {
     }
 }
 
-const SDK_TYPES = {
-    mobile:'mobile',
-    javascript:'javascript',
-    ios:'ios',
-    backend:'backend',
-    frontend:'frontend'
-}
+
 const SDK_GROUP = {
     mobile:['android','ios','react-native'],
     backend:['python','java','golang','.NET'],
@@ -367,36 +469,7 @@ export class SdkExtension {
         * @return {boolean} Returns true or false if dependency present
         */
    
-    
-    let expandedSet = new Set();//duplicates, user error?
-
-    let accountSdks = accountData.PROJECT_API.getSdks();
-    function helper(accountSdks,value){
-        return accountSdks.includes(value);
-    }
-    if(ruleDepsArray.includes(SDK_TYPES.mobile)){
-        SDK_GROUP.mobile.forEach(v => {
-            if(helper(accountSdks,v)) expandedSet.add(v);
-        });
-    }
-    if(ruleDepsArray.includes(SDK_TYPES.backend)){
-       SDK_GROUP.backend.forEach(v => {
-        if(helper(accountSdks,v)) expandedSet.add(v);
-    });
-    }
-    ruleDepsArray.forEach(v => {
-        //thought about sdk.group as a new dependency type to avoid this unnecessary step removing pollution 
-        if (SDK_TYPES.mobile !== v && SDK_TYPES.backend !== v && SDK_TYPES.frontend !== v) expandedSet.add(v);
-        
-    });
-
-    const a = Array.from(expandedSet);
-    if(a.length !== 0 && isSubset(accountSdks,a)){
-        return true;
-    }
-    return false
-    
-
+        return true
    }
 
 
@@ -410,9 +483,17 @@ function isSubset(dep1,dep2){
 export const mockAccount = {
     org:{
         hasIntegrationVCS:() => false,
+        hasIntegrationsSSO:() => false,
+        hasIntegrationsAlerting:() => false,
         projects:[
             {   
-                name:"test_name",
+                name:"test_name_A",
+                hasOkhttp:() => false,
+                hasReleases: () => true,
+                hasAndroidDb:() => false,
+                hasFileIo:() => false,
+                hasAndroidHttp: () => false,
+                hasFragments:() => false,
                 getSdks:() => ['android','javascript','java'],
                 hasOwnership:() => false,
                 hasEnv:() => false,
@@ -421,14 +502,25 @@ export const mockAccount = {
                 hasIntegrationVCS:() => false,
                 hasIntegrationsAlerting:() => false,
                 hasSourcemaps:() => false,
+                hasDsyms:()=> false,
+                hasProguard:() => false,
+                hasVersioning:()=> false,
+                hasSessions:() => false,
                 hasBaseTransactions:() => true,
                 hasDashboards:() => false,
                 hasAssignment:() => false,
                 hasDropped:() => true,
                 hasIntegrationVCS:() => true,
             },
-            {   
-                name:"test_name_a",
+            {  
+                 
+                name:"test_name_B",
+                hasReleases: () => true,
+                hasOkhttp:() => true,
+                hasAndroidDb:() => true,
+                hasFileIo:() => true,
+                hasAndroidHttp: () => true,
+                hasFragments:() => true,
                 getSdks:() => ['android','javascript','java'],
                 hasOwnership:() => false,
                 hasEnv:() => false,
@@ -437,11 +529,15 @@ export const mockAccount = {
                 hasIntegrationVCS:() => false,
                 hasIntegrationsAlerting:() => false,
                 hasSourcemaps:() => false,
+                hasDsyms:()=> false,
+                hasProguard:() => false,
+                hasVersioning:()=> false,
+                hasSessions:() => false,
                 hasBaseTransactions:() => true,
                 hasDashboards:() => false,
                 hasAssignment:() => false,
                 hasDropped:() => true,
-                hasIntegrationVCS:() => true,
+               
             }
 
         ]
@@ -450,7 +546,7 @@ export const mockAccount = {
 }
 
 
-export const extensions = [RootExtension, SdkExtension, OrgExtension, ProjectExtension, OrgIssueExtension, ProjectIssueExtension];
+export const extensions = [RootExtension, SdkExtension,SdkPlatformExtension,SdkIssueExtension, OrgExtension, ProjectExtension, OrgIssueExtension, ProjectIssueExtension];
 export const EngineOptions = {
     debug:false,
     ruleSet:RULES,
@@ -460,4 +556,3 @@ export const EngineOptions = {
 export const RULE_ENGINE = new Engine(EngineOptions);
 
 
-// exports.Engine = e;
