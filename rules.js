@@ -1,7 +1,7 @@
 
 import { SdkExtension } from "./engine.js"
 import { DEPENDENCY_TYPES,ISSUE_TYPES, SDK_TYPES, ORG_ISSUE_TYPES, SDK_ISSUE_TYPES } from "./types.js"
-import { AndroidIssueDetectors } from "./detectors/index.js"
+import { AndroidIssueDetectors,WorkflowIssueDetectors,ReleaseIssueDetectors,EcosystemIssueDetectors,QuotaIssueDetectors } from "./detectors/index.js"
 // Rule {
 //     /**
 //      * {string} body The outbound text
@@ -12,25 +12,22 @@ import { AndroidIssueDetectors } from "./detectors/index.js"
 
 
 /**
- * Naming for product areas  
- * Workflow . (  alerts | assignment | ownership) . ( none | etc )
- * Releases . (environment | sessions | versioning | artifacts | ...) . (none | )
- * Quota . (filtered | dropped | utilization) . ( error | transaction ) . (high | base | low )
- * Dashboards . ( none )
- * Ecosystem . (vcs | issue_mgmt | alerting | ...) . (none)
- * SDK . (platform) . ( update | integration_type) . (major | minor | none (integration_type))
+ *
+ *
  */
 
-// Dependencies
+
 /**
- * These are any keys that are specified within deps:{}. They function to identify dependencies of the rule. The currently map to types of Extensions which specify the logic for evaluating dependencies against account data. 
+ *  Dependencies & Issue Detectors:
+ * 
+ * Dependencies are any keys that are specified within deps:{}. They function to identify account data dependencies of the rule. Object properties map to types of Extensions which specify the logic for evaluating dependencies against account data. 
+ * 
+ * Issue Detectors:
+ *  Most custom logic for evaluating whether a rule is applied or not is specificed in a detector. Detectors are functions associated with the issue property of an org or project dependency. This is a function that takes account data APIs and (for now) returns a Boolean. 
  */
 
 // Issues:
 
-// 1. Naming
-//  <product area> . <feature subset> . < optional: data type descriptor> . <issue (some | none | high | low | etc )>
-// 2. Adding to types.js, login for evaluation in project or org issue extensions (engine.js), 
 
 /** Can I write a rule that depends on both some org and some project deps?
  * YES
@@ -43,8 +40,8 @@ import { AndroidIssueDetectors } from "./detectors/index.js"
  *          project  org
  *          /   \      \
  * .      sdk   issue  issue
- *       /   \     \     \
- *      /     \  [types]  [types]
+ *       /   \     \      \
+ *      /     \ [detector] [detector]
  * platform  issue
  *
  * Sibling order is dependent on how rules are authored. The result of the nth sibling will impact whether or not the nth + 1 is evaluated or we exit early.
@@ -125,7 +122,7 @@ export const RULES = [
                 [DEPENDENCY_TYPES.sdk]:{
                     [DEPENDENCY_TYPES.sdk_platform]:[SDK_TYPES.mobile],
                 },
-                [DEPENDENCY_TYPES.issue]:[ISSUE_TYPES["dashboards.none"]]
+                [DEPENDENCY_TYPES.issue]:[WorkflowIssueDetectors.hasDashboards]
                 
             }
         },
@@ -139,7 +136,7 @@ export const RULES = [
                    [DEPENDENCY_TYPES.sdk_platform]:[SDK_TYPES.mobile]
                 },
                
-                [DEPENDENCY_TYPES.issue]:[ISSUE_TYPES["workflow.issue_alerts.none"]]
+                [DEPENDENCY_TYPES.issue]:[WorkflowIssueDetectors.hasAnyIssueAlerts]
             }
         },
         priority:2
@@ -148,13 +145,13 @@ export const RULES = [
        body:"Crash free session tracking can be enhanced with real time session based alerting. Get notified via your preferred tool by leveraging out integrations platform.",
        deps:{
            [DEPENDENCY_TYPES.org]:{
-               [DEPENDENCY_TYPES.issue]:[ISSUE_TYPES["ecosystem.alerting.none"]]
+               [DEPENDENCY_TYPES.issue]:[EcosystemIssueDetectors.hasOrgIntegrationsAlerting]
            },
            [DEPENDENCY_TYPES.project]:{
                 [DEPENDENCY_TYPES.sdk]:{
                     [DEPENDENCY_TYPES.sdk_platform]:[SDK_TYPES.mobile]
                 },
-               [DEPENDENCY_TYPES.issue]:[ISSUE_TYPES["workflow.metric_alerts.none"]]
+               [DEPENDENCY_TYPES.issue]:[WorkflowIssueDetectors.hasAnyMetricAlerts]
            }
        },
        priority:2
@@ -169,7 +166,7 @@ export const RULES = [
                     SDK_TYPES.mobile]
                 },
                 [DEPENDENCY_TYPES.issue]:[
-                    ISSUE_TYPES["releases.session_tracking.none"],
+                   ReleaseIssueDetectors.hasSessionTracking,
                 ],
                 
             }
@@ -181,7 +178,7 @@ export const RULES = [
         deps:{
             [DEPENDENCY_TYPES.project]:{
                 [DEPENDENCY_TYPES.issue]:[
-                    ISSUE_TYPES["workflow.issue_alerts.none"],ISSUE_TYPES["workflow.metric_alerts.none"]
+                    WorkflowIssueDetectors.hasAnyIssueAlerts,WorkflowIssueDetectors.hasAnyMetricAlerts
                 ]
             }
         },
@@ -192,7 +189,7 @@ export const RULES = [
         deps:{
             [DEPENDENCY_TYPES.org]:[
                 DEPENDENCY_TYPES.issue[
-                    ORG_ISSUE_TYPES["ecosystem.alerting.none"]
+                    EcosystemIssueDetectors.hasOrgIntegrationsAlerting
                 ]
             ]
         },
@@ -202,7 +199,7 @@ export const RULES = [
        body:"Sentry supports sso for a select group of providers. Streamline your onboarding process using this integration or our generic auth provider.",
        deps:{[DEPENDENCY_TYPES.org]:{
            [DEPENDENCY_TYPES.issue]:[
-               ORG_ISSUE_TYPES["ecosystem.sso.none"]
+              EcosystemIssueDetectors.hasOrgIntegrationsSso
            ]
        }}
        ,priority:0
@@ -214,7 +211,7 @@ export const RULES = [
             [DEPENDENCY_TYPES.sdk]:{
                   [DEPENDENCY_TYPES.sdk_platform]:[SDK_TYPES["react-native"]]
               },
-            [DEPENDENCY_TYPES.issue]:[ISSUE_TYPES["releases.artifacts.sourcemaps.none"]]}
+            [DEPENDENCY_TYPES.issue]:[ReleaseIssueDetectors.hasArtifactsSourcemaps]}
        },
        prority:0
    } ,
@@ -222,10 +219,11 @@ export const RULES = [
             body:"Adding debug files will dramatically improve the readibility of your stacktraces, sentry’s grouping algorithm, & issue ownership. Consider using our fastlane plugin or Appstore connect integration.",
             deps:{
                 project:{
-                    issue:[ISSUE_TYPES["releases.artifacts.dsyms.none"]],
+                    
                     sdk:{
                         [DEPENDENCY_TYPES.sdk_platform]:[SDK_TYPES.ios]
-                    }
+                    },
+                    issue:[ReleaseIssueDetectors.hasArtifactsDsym],
                 },
                 
             },priority:0
@@ -237,7 +235,7 @@ export const RULES = [
                     [DEPENDENCY_TYPES.sdk]:{
                         [DEPENDENCY_TYPES.sdk_platform]:[SDK_TYPES.android],
                     },
-                    [DEPENDENCY_TYPES.issue]:[ISSUE_TYPES["releases.artifacts.proguard.none"]],
+                    [DEPENDENCY_TYPES.issue]:[ReleaseIssueDetectors.hasArtifactsProguard],
                    
                 },
             },
@@ -247,7 +245,7 @@ export const RULES = [
            body:"Help sentry understand your versioning scheme. Adopting the pattern specified <here> enables support for Semantic Versioning in your queries and release filtering.",
            deps:{
                [DEPENDENCY_TYPES.project]:{
-                   [DEPENDENCY_TYPES.issue]:[ISSUE_TYPES["releases.versioning.none"]]
+                   [DEPENDENCY_TYPES.issue]:[ReleaseIssueDetectors.hasVersionedReleases]
                 }
                 },
            priority:0
@@ -255,12 +253,12 @@ export const RULES = [
         },
         {
             body:"VCS allows organizations & their teams to triage more efficiently by adding commit metadata to Senry issues. We recommend configuring this when possible.",
-            deps:{org:{"issue":[ORG_ISSUE_TYPES["ecosystem.vcs.none"]]}},
+            deps:{org:{"issue":[EcosystemIssueDetectors.hasOrgIntegrationVcs]}},
             "priority":0
         },
         {
             body:"Specifying ownership rules or integrating suspect commits improves context during triage. This is a quick win.",
-            deps:{org:{issue:[ORG_ISSUE_TYPES["ecosystem.vcs.none"]]},project:{issue:[ISSUE_TYPES["workflow.ownership.none"]]}},
+            deps:{org:{issue:[EcosystemIssueDetectors.hasOrgIntegrationVcs]},project:{issue:[WorkflowIssueDetectors.hasAnyOwnership]}},
             priority:0
         },
         {
@@ -270,17 +268,20 @@ export const RULES = [
                     "sdk":{
                     [DEPENDENCY_TYPES.sdk_platform]:["mobile"],
                 },
-                "issue":[ISSUE_TYPES["release_health.environment.none"]]}},
+                "issue":[ReleaseIssueDetectors.hasEnvironments]}},
             "priority":0
         },
         {
             "body":"Crash free session tracking can be enhanced with real time session based alerting. Get notified via your preferred tool by leveraging out integrations platform.",
             "deps":{
+                org:{
+                    "issue":[EcosystemIssueDetectors.hasIntegrationsAlerting]
+                },
                 project:{
                     "sdk":{
                         [DEPENDENCY_TYPES.sdk_platform]:["mobile"],
                     },
-                    "issue":[ISSUE_TYPES["workflow.metric_alerts.none"],ISSUE_TYPES["ecosystem.alerting.none"]]}},
+                    "issue":[WorkflowIssueDetectors.hasAnyMetricAlerts]}},
             "priority":10
         }
         ,
@@ -291,7 +292,7 @@ export const RULES = [
                     "sdk":{
                         [DEPENDENCY_TYPES.sdk_platform]:["mobile"]
                     },
-                    "issue":[ISSUE_TYPES["workflow.issue_alerts.none"]]}},
+                    "issue":[WorkflowIssueDetectors.hasAnyIssueAlerts]}},
             "priority":10
         },
         {
@@ -301,8 +302,8 @@ export const RULES = [
                     "sdk":{
                        [DEPENDENCY_TYPES.sdk_platform]:["mobile"]
                     },
-                    "issue":[ISSUE_TYPES["workflow.ownership.none"],ISSUE_TYPES["ecosystem.vcs.none"]]}},
-            "priority":10
+                    "issue":[WorkflowIssueDetectors.hasAnyOwnership]}},
+            "priority":5
         },
         {
             "body":"There are benefits to uploading sourcemaps directly to Sentry via our API. You can improve the consistency & reliability of human readable stacktraces in your project. Exposing sensitive URLs is generally not ideal.",
@@ -311,8 +312,8 @@ export const RULES = [
                     "sdk":{
                         [DEPENDENCY_TYPES.sdk_platform]:['javascript']
                 },
-                    "issue":[ISSUE_TYPES["releases.artifacts.sourcemaps.none"]]}},
-            "priority":10
+                    "issue":[ReleaseIssueDetectors.hasArtifactsSourcemaps]}},
+            "priority":1
         },
         {
             "body":"Our tracing product allows you to identify bottlenecks & correlate errors directly in the Senty UI. You have some projects that might be good candidates for this.",
@@ -321,8 +322,8 @@ export const RULES = [
                     "sdk":{
                         [DEPENDENCY_TYPES.sdk_platform]:['frontend','backend']
                 },
-                    "issue":[ISSUE_TYPES["quota.utilization.txn.base"]]}},
-            "priority":10
+                    "issue":[QuotaIssueDetectors.hasUtilizedBaseTxn]}},
+            "priority":8
         },
         {
             "body":"Dashboards combine all sentry events into one consistent view for your team. Consider centralizing new crashes, owned issues, and trace/performance metrics that are important.",
@@ -330,18 +331,18 @@ export const RULES = [
                 [DEPENDENCY_TYPES.sdk]:{
                     [DEPENDENCY_TYPES.sdk_platform]:[SDK_TYPES.mobile]
                 },
-                "issue":[ISSUE_TYPES["dashboards.none"]]}},
+                "issue":[WorkflowIssueDetectors.hasDashboards]}},
             "priority":10
         },
         {
-            "body":"Issues are best owned within Sentry. Assigning issues routes notifications and issues directly to those most apt to fix them. You can even have Sentry do this automatically for you.",
-            "deps":{project:{"issue":[ISSUE_TYPES["workflow.assignment.none"]]}},
+            "body":"Issues are best owned within Sentry. Assigning issues routes notifications and issues directly to those most apt to fix them. You can even have Sentry do assignment automatically for you.",
+            "deps":{project:{"issue":[WorkflowIssueDetectors.hasIssueAssignment]}},
             "priority":10
         },
         {
             "body":"Dropping events can impact your visibility of issues. Consider using Discover to triage your noisiest issues or identify other good candidates for filtering.",
-            "deps":{project:{"issue":[ISSUE_TYPES["quota.dropped.errors.high"]]}},
-            "priority":0
+            "deps":{project:{"issue":[QuotaIssueDetectors.hasHighDroppedErrors]}},
+            "priority":2
         },
         
     ]

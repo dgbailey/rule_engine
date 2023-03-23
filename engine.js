@@ -297,30 +297,17 @@ export class OrgIssueExtension {
     constructor(){
        
     }
-    evaluate(accountData, issueDepsArray,context = {}){
+    evaluate(accountData, issueDetectors,context = {}){
         /**
          * @param {Object} accountData An object representing API for org data
          */
-        //do we assume we have just org rules at this point?
-        let result = false;
+        
+        let noIssueDetected = issueDetectors.map(d => d(accountData)).every(Boolean)
+        
+        return noIssueDetected ? false : true
 
-        for (let issueType of issueDepsArray){
-           if(issueType === ORG_ISSUE_TYPES['ecosystem.vcs.none']){
-            if(!accountData.ORG_API.hasIntegrationVCS()) result = true;
-           }
-           else if(issueType === ORG_ISSUE_TYPES["ecosystem.alerting.none"]){
-               if(!accountData.ORG_API.hasIntegrationsAlerting()) result = true;
-           }
-           else if(issueType === ORG_ISSUE_TYPES["ecosystem.sso.none"]){
-               if(!accountData.ORG_API.hasIntegrationsSSO()) result = true;
-           }else {
-               throw Error("Issue type not found for ORG_ISSUE extension")
-           }
-           
-        }
-        return result
-    }
-}
+        
+}}
 
 export class ProjectExtension {
     static dependency = DEPENDENCY_TYPES.project;
@@ -346,86 +333,20 @@ export class ProjectIssueExtension {
     constructor(){
        
     }
-    
    
-    evaluate(accountData, depsArray, context={}){
+    evaluate(accountData, issueDetectors, context={}){
         /**
          * @param {Object} accountData An object representing API for project data
-         * @param {Array} depsArray An array of Rule dependencies
+         * @param {Array} issueDetectors An array of functions applied to account data
          * @param {Object} context A optional context with metadata from the rule tree
          * @return {boolean} Returns true or false if dependency present
          */
 
-    
-        let result = false;
         
-
-
-        for (let issueType of depsArray){
-            //TODO:look for commonalities to optimize this evaluation in future
-            //if issue type is defined but not present in extension this should throw
-            if (issueType === ISSUE_TYPES["dashboard.none"]){
-
-            }
-            else if (issueType === ISSUE_TYPES["releases.session_tracking.none"]){
-                if(!accountData.PROJECT_API.hasSessions()) result = true; 
-            }
-            else if (issueType === ISSUE_TYPES["releases.versioning.none"]){
-                if(!accountData.PROJECT_API.hasReleases()) result = true; 
-            }
-            else if (issueType === ISSUE_TYPES["releases.artifacts.dsyms.none"]){
-                if(!accountData.PROJECT_API.hasDsyms()) result = true; 
-            }
-            else if (issueType === ISSUE_TYPES["releases.artifacts.proguard.none"]){
-                if(!accountData.PROJECT_API.hasProguard()) result = true; 
-            }
-            else if (issueType === ISSUE_TYPES["release_health.environment.none"]){
-                
-                if(!accountData.PROJECT_API.hasEnv()) result = true;
-            }
-            else if(issueType === ISSUE_TYPES["workflow.ownership.none"]){
-               
-                if (!accountData.PROJECT_API.hasOwnership()) result = true;
-            }
-            else if(issueType === ISSUE_TYPES["workflow.metric_alerts.none"]){
-               
-                if (!accountData.PROJECT_API.hasMetricAlert()) result = true;
-            }
-            else if(issueType === ISSUE_TYPES["workflow.issue_alerts.none"]){
-               
-                if (!accountData.PROJECT_API.hasIssueAlert()) result = true;
-            }
-            else if(issueType === ISSUE_TYPES["ecosystem.vcs.none"]){
-               
-                if (!accountData.PROJECT_API.hasIntegrationVCS()) result = true;
-            }
-            else if(issueType === ISSUE_TYPES["releases.artifacts.sourcemaps.none"]){
-               
-                if (!accountData.PROJECT_API.hasSourcemaps()) result = true;
-            }
-            else if(issueType === ISSUE_TYPES["quota.utilization.txn.base"]){
-               
-                if (accountData.PROJECT_API.hasBaseTransactions()) result = true;
-            }
-            else if(issueType === ISSUE_TYPES["dashboards.none"]){
-               
-                if (!accountData.PROJECT_API.hasDashboards()) result = true;
-            }
-            else if(issueType === ISSUE_TYPES["workflow.assignment.none"]){
-               
-                if (!accountData.PROJECT_API.hasAssignment()) result = true;
-            }
-            else if(issueType === ISSUE_TYPES["quota.dropped.errors.high"]){
-               
-                if (accountData.PROJECT_API.hasDropped()) result = true;
-            }
-            else if(issueType === ISSUE_TYPES["ecosystem.alerting.none"]){
-               
-                if (accountData.PROJECT_API.hasIntegrationsAlerting()) result = true;
-            }
-            else throw new Error(`Issue Extension did not find matching issue_type: ${issueType}`);
-        }
-        return result
+        let noIssueDetected = issueDetectors.map(d => d(accountData)).every(Boolean)
+        
+        return noIssueDetected ? false : true
+        
     }
 }
 
