@@ -229,6 +229,7 @@ export class SdkPlatformExtension {
         */
 
     let result = false; 
+    //random change
     let expandedSet = new Set();//duplicates, user error?
 
     let accountSdks = accountData.PROJECT_API.getSdks();
@@ -265,6 +266,9 @@ export class SdkPlatformExtension {
 }
 //SO we have a project level issue sdk.integrations.none
 /**
+ * In For changes on this branch we will have extensions call each function they are passed in the issue Deps Array. Change this from being called an array as well. 
+ * 
+ * For detector in something, doesRuleApply = detector(accountData);
  * Where do we evaluate this? 
  */
 export class SdkIssueExtension {
@@ -273,33 +277,13 @@ export class SdkIssueExtension {
 
     }
     
-    evaluate(accountData, issueDepsArray, context={}){
-        let result = false;
+    evaluate(accountData, issueDetectors, context={}){
         
-        for (let issueType of issueDepsArray){
-           
-            switch(issueType){
-                case SDK_ISSUE_TYPES["sdk.android.instrumentation.http_errors.none"]:
-                    if (!accountData.PROJECT_API.hasAndroidHttp()) result = true;
-                    break;
-                case SDK_ISSUE_TYPES["sdk.android.instrumentation.db.none"]:
-                    if (!accountData.PROJECT_API.hasAndroidDb()) result = true;
-                    break;
-                case SDK_ISSUE_TYPES["sdk.android.instrumentation.fileio.none"]:
-                    if (!accountData.PROJECT_API.hasFileIo()) result = true;
-                    break;
-                case SDK_ISSUE_TYPES["sdk.android.instrumentation.fragments.none"]:
-                    if (!accountData.PROJECT_API.hasFragments()) result = true;
-                    break;
-                case SDK_ISSUE_TYPES["sdk.android.instrumentation.okhttp.none"]:
-                    if (!accountData.PROJECT_API.hasOkhttp()) result = true;
-                    break;
-                default:
-                    throw Error(`SDK_ISSUE_TYPE not found for ${issueType} in ${issueDepsArray}`)
-            }
-           
-        }
-        return result
+        //Does this mean all issue detectors function this way? 
+        //True signaling positive signals?
+        let noIssueDetected = issueDetectors.map(d => d(accountData)).every(Boolean)
+        
+        return noIssueDetected ? false : true
        
     }
 }

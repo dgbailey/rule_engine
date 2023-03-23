@@ -1,6 +1,7 @@
 
 import { SdkExtension } from "./engine.js"
 import { DEPENDENCY_TYPES,ISSUE_TYPES, SDK_TYPES, ORG_ISSUE_TYPES, SDK_ISSUE_TYPES } from "./types.js"
+import { AndroidIssueDetectors } from "./detectors/index.js"
 // Rule {
 //     /**
 //      * {string} body The outbound text
@@ -76,6 +77,14 @@ This could be nested under sdk as a new sdk_issue extension:
 with each node corresponding to a new extension or existing extension.
 */
 
+/**
+ * TODO:
+ * 1. Fix bug in rule evaluation for issue extensions
+ * 2. Think of the best way to avoid large switch statements. Most likely by generalizing extensions to evaluate only, and moving
+ *     logic to specific issue classes AndroidSdkIssues.getInstrumentationAll(). Then specifying these methods in issue dep arrays directly in rules. Classes would take account data APIS as an arg in functions.
+ * 3. Detectors {AndroidSdkIssues, PlatformType, WorkflowIssues ->  functions that are stateless? Just consume a data API and return a boolean
+ */
+
 export const RULES = [
     {
         body:"Sentry’s android sdk offers detection for http client errors. You are not currently tracking this.",
@@ -83,7 +92,7 @@ export const RULES = [
             [DEPENDENCY_TYPES.project]:{
                 [DEPENDENCY_TYPES.sdk]:{
                     [DEPENDENCY_TYPES.sdk_platform]:[SDK_TYPES.android],
-                    [DEPENDENCY_TYPES.issue]:[SDK_ISSUE_TYPES["sdk.android.instrumentation.http_errors.none"]]
+                    [DEPENDENCY_TYPES.issue]:[AndroidIssueDetectors.hasInstrumentationHttpErrors]
             }}
         },
         priority:2
@@ -95,9 +104,9 @@ export const RULES = [
                 [DEPENDENCY_TYPES.sdk]:{
                     [DEPENDENCY_TYPES.sdk_platform]:[SDK_TYPES.android],
                     [DEPENDENCY_TYPES.issue]:[
-                        SDK_ISSUE_TYPES["sdk.android.instrumentation.fragments.none"],
-                        SDK_ISSUE_TYPES["sdk.android.instrumentation.db.none"],
-                        SDK_ISSUE_TYPES["sdk.android.instrumentation.okhttp.none"]
+                        AndroidIssueDetectors.hasInstrumentationFragments,
+                        AndroidIssueDetectors.hasInstrumentationDatabase,
+                        AndroidIssueDetectors.hasOkhttp
                     ],
                     
                 },
