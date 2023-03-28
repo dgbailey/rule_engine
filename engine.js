@@ -126,10 +126,24 @@ export class Engine {
   _dataApiErrorWrapper(target){
     const handler = {
       get(target,prop,receiver){
+        
         if(target[prop] === undefined){
-          throw new Error(`Unable to access property [${prop}] for data API. Check that detector is defined correctly.`)
+
+          //Log error if dataApi undefined for future additions
+          /*
+            For now the two cases are sdk platform evaluators and all others. In most, if not all other cases, true is an indication of a positive signal (doesn't have issue).
+          */
+          console.error(`Unable to access property [${prop}] for data API. Check that detector is defined correctly.`)
+          switch(prop){
+            case "getSdks":
+       
+              return () => []
+            default:
+              return () => true
+          }
           
-        }else{
+        }
+        else{
           return Reflect.get(...arguments);
         }
       }
@@ -220,55 +234,68 @@ export class OrgEvaluator {
   }
 }
 
-export class SdkPlatformEvaluator {
-  static dependency = DEPENDENCY_TYPES.sdk_platform;
-  constructor() {}
+// export class SdkPlatformEvaluator {
+//   static dependency = DEPENDENCY_TYPES.sdk_platform;
+//   constructor() {}
 
-  evaluate(accountData, ruleDepsArray, context = {}) {
-    /**
-        * //TODO:port over logic from parent SDK extensino
-        //make sure rules reflect the new hierarchy
-        //Add platform extension to exported extensions
-        //test
-        * @return {boolean} Returns true or false if dependency present
-        */
+//   evaluate(accountData, ruleDepsArray, context = {}) {
+//     /**
+//         * //TODO:port over logic from parent SDK extensino
+//         //make sure rules reflect the new hierarchy
+//         //Add platform extension to exported extensions
+//         //test
+//         * @return {boolean} Returns true or false if dependency present
+//         */
 
-    let result = false;
-    //random change
-    let expandedSet = new Set(); //duplicates, user error?
+//     let result = false;
+//     //random change
+//     let expandedSet = new Set(); //duplicates, user error?
 
-    let accountSdks = accountData.PROJECT_API.getSdks();
-    function helper(accountSdks, value) {
-      return accountSdks.includes(value);
-    }
-    if (ruleDepsArray.includes(SDK_TYPES.mobile)) {
-      SDK_GROUP.mobile.forEach((v) => {
-        if (helper(accountSdks, v)) expandedSet.add(v);
-      });
-    }
-    if (ruleDepsArray.includes(SDK_TYPES.backend)) {
-      SDK_GROUP.backend.forEach((v) => {
-        if (helper(accountSdks, v)) expandedSet.add(v);
-      });
-    }
+//     let accountSdks = accountData.PROJECT_API.getSdks();
+//     function helper(accountSdks, value) {
+//       return accountSdks.includes(value);
+//     }
+//     if (ruleDepsArray.includes(SDK_TYPES.mobile)) {
+//       SDK_GROUP.mobile.forEach((v) => {
+//         if (helper(accountSdks, v)) expandedSet.add(v);
+//       });
+//     }
+//     if (ruleDepsArray.includes(SDK_TYPES.backend)) {
+//       SDK_GROUP.backend.forEach((v) => {
+//         if (helper(accountSdks, v)) expandedSet.add(v);
+//       });
+//     }
 
-    ruleDepsArray.forEach((v) => {
-      //thought about sdk.group as a new dependency type to avoid this unnecessary step removing pollution
-      if (
-        SDK_TYPES.mobile !== v &&
-        SDK_TYPES.backend !== v &&
-        SDK_TYPES.frontend !== v
-      )
-        expandedSet.add(v);
-    });
+//     ruleDepsArray.forEach((v) => {
+//       //thought about sdk.group as a new dependency type to avoid this unnecessary step removing pollution
+//       if (
+//         SDK_TYPES.mobile !== v &&
+//         SDK_TYPES.backend !== v &&
+//         SDK_TYPES.frontend !== v
+//       )
+//         expandedSet.add(v);
+//     });
 
-    const a = Array.from(expandedSet);
-    if (a.length !== 0 && isSubset(accountSdks, a)) {
-      result = true;
-    }
+//     const a = Array.from(expandedSet);
+//     if (a.length !== 0 && isSubset(accountSdks, a)) {
+//       result = true;
+//     }
 
-    return result;
-  }
+//     return result;
+//   }
+// }
+class BasePlatformEvaluator {
+  static dependency = DEPENDENCY_TYPES.sdk_platform
+  evaluate(accountData, platformDetectors, context = {}) {
+    const doNotFlagAccount = false
+    const flag = true
+    
+    let platformDetected = platformDetectors
+      .map((d) => d(accountData))
+      .every(Boolean);
+
+    return platformDetected ? flag : doNotFlagAccount;
+  }  
 }
 class BaseIssueEvaluator{
   evaluate(accountData, issueDetectors, context = {}) {
@@ -355,7 +382,7 @@ export const mockAccount = {
         hasFileIo: () => false,
         hasAndroidHttp: () => false,
         hasFragments: () => false,
-        getSdks: () => ["android", "javascript", "java"],
+        // getSdks: () => ["android", "javascript", "java"],
         hasOwnership: () => false,
         hasEnv: () => false,
         hasMetricAlert: () => false,
@@ -405,7 +432,7 @@ export const mockAccount = {
 export const evaluatorCollection = [
   RootEvaluator,
   SdkEvaluator,
-  SdkPlatformEvaluator,
+  BasePlatformEvaluator,
   SdkIssueEvaluator,
   OrgEvaluator,
   ProjectEvaluator,

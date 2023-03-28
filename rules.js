@@ -1,6 +1,7 @@
 
 import { DEPENDENCY_TYPES, SDK_TYPES,  } from "./types.js"
-import { AndroidIssueDetectors,WorkflowIssueDetectors,ReleaseIssueDetectors,EcosystemIssueDetectors,QuotaIssueDetectors } from "./detectors/index.js"
+import { AndroidIssueDetectors,WorkflowIssueDetectors,ReleaseIssueDetectors,EcosystemIssueDetectors,QuotaIssueDetectors,PlatformDetectors} from "./detectors/index.js"
+import { isPlatformReactNative } from "./detectors/platforms.js"
 
 
 /**
@@ -82,7 +83,7 @@ export const RULES = [
         deps:{
             [DEPENDENCY_TYPES.project]:{
                 [DEPENDENCY_TYPES.sdk]:{
-                    [DEPENDENCY_TYPES.sdk_platform]:[SDK_TYPES.android],
+                    [DEPENDENCY_TYPES.sdk_platform]:[PlatformDetectors.isPlatformAndroid],
                     [DEPENDENCY_TYPES.issue]:[AndroidIssueDetectors.isInstrumentedHttpErrors]
             }}
         },
@@ -93,7 +94,7 @@ export const RULES = [
         deps:{
             [DEPENDENCY_TYPES.project]:{
                 [DEPENDENCY_TYPES.sdk]:{
-                    [DEPENDENCY_TYPES.sdk_platform]:[SDK_TYPES.android],
+                    [DEPENDENCY_TYPES.sdk_platform]:[PlatformDetectors.isPlatformAndroid],
                     [DEPENDENCY_TYPES.issue]:[
                         AndroidIssueDetectors.isInstrumentedFragments,
                         AndroidIssueDetectors.isInstrumentedDatabase,
@@ -114,7 +115,7 @@ export const RULES = [
         deps:{
             [DEPENDENCY_TYPES.project]:{
                 [DEPENDENCY_TYPES.sdk]:{
-                    [DEPENDENCY_TYPES.sdk_platform]:[SDK_TYPES.mobile],
+                    [DEPENDENCY_TYPES.sdk_platform]:[PlatformDetectors.isPlatformMobile],
                 },
                 [DEPENDENCY_TYPES.issue]:[WorkflowIssueDetectors.isUsingDashboards]
                 
@@ -127,7 +128,7 @@ export const RULES = [
         deps:{
             [DEPENDENCY_TYPES.project]:{
                 [DEPENDENCY_TYPES.sdk]:{
-                   [DEPENDENCY_TYPES.sdk_platform]:[SDK_TYPES.mobile]
+                   [DEPENDENCY_TYPES.sdk_platform]:[PlatformDetectors.isPlatformMobile]
                 },
                
                 [DEPENDENCY_TYPES.issue]:[WorkflowIssueDetectors.isUsingIssueAlerts]
@@ -143,7 +144,7 @@ export const RULES = [
            },
            [DEPENDENCY_TYPES.project]:{
                 [DEPENDENCY_TYPES.sdk]:{
-                    [DEPENDENCY_TYPES.sdk_platform]:[SDK_TYPES.mobile]
+                    [DEPENDENCY_TYPES.sdk_platform]:[PlatformDetectors.isPlatformMobile]
                 },
                [DEPENDENCY_TYPES.issue]:[WorkflowIssueDetectors.isUsingMetricAlerts]
            }
@@ -157,7 +158,7 @@ export const RULES = [
             [DEPENDENCY_TYPES.project]:{
                 [DEPENDENCY_TYPES.sdk]:{
                     [DEPENDENCY_TYPES.sdk_platform]:[
-                    SDK_TYPES.mobile]
+                    PlatformDetectors.isPlatformMobile]
                 },
                 [DEPENDENCY_TYPES.issue]:[
                    ReleaseIssueDetectors.isSessionTracking,
@@ -203,7 +204,7 @@ export const RULES = [
        deps:{
           [DEPENDENCY_TYPES.project]:{
             [DEPENDENCY_TYPES.sdk]:{
-                  [DEPENDENCY_TYPES.sdk_platform]:[SDK_TYPES["react-native"]]
+                  [DEPENDENCY_TYPES.sdk_platform]:[isPlatformReactNative]
               },
             [DEPENDENCY_TYPES.issue]:[ReleaseIssueDetectors.isUploadingArtifactsSourcemaps]}
        },
@@ -215,7 +216,7 @@ export const RULES = [
             project:{
                 
                 sdk:{
-                    [DEPENDENCY_TYPES.sdk_platform]:[SDK_TYPES.ios]
+                    [DEPENDENCY_TYPES.sdk_platform]:[PlatformDetectors.isPlatformIos]
                 },
                 issue:[ReleaseIssueDetectors.isUploadingArtifactsDsym],
             },
@@ -227,7 +228,7 @@ export const RULES = [
         deps:{
             [DEPENDENCY_TYPES.project]:{
                 [DEPENDENCY_TYPES.sdk]:{
-                    [DEPENDENCY_TYPES.sdk_platform]:[SDK_TYPES.android],
+                    [DEPENDENCY_TYPES.sdk_platform]:[PlatformDetectors.isPlatformAndroid],
                 },
                 [DEPENDENCY_TYPES.issue]:[ReleaseIssueDetectors.isUploadingArtifactsProguard],
                 
@@ -260,7 +261,7 @@ export const RULES = [
         "deps":{
             project:{
                 "sdk":{
-                [DEPENDENCY_TYPES.sdk_platform]:["mobile"],
+                [DEPENDENCY_TYPES.sdk_platform]:[PlatformDetectors.isPlatformMobile],
             },
             "issue":[ReleaseIssueDetectors.isUsingEnvironments]}},
         "priority":0
@@ -273,7 +274,7 @@ export const RULES = [
             },
             project:{
                 "sdk":{
-                    [DEPENDENCY_TYPES.sdk_platform]:["mobile"],
+                    [DEPENDENCY_TYPES.sdk_platform]:[PlatformDetectors.isPlatformMobile],
                 },
                 "issue":[WorkflowIssueDetectors.isUsingMetricAlerts]}},
         "priority":10
@@ -284,7 +285,7 @@ export const RULES = [
         "deps":{
             project:{
                 "sdk":{
-                    [DEPENDENCY_TYPES.sdk_platform]:["mobile"]
+                    [DEPENDENCY_TYPES.sdk_platform]:[PlatformDetectors.isPlatformMobile]
                 },
                 "issue":[WorkflowIssueDetectors.isUsingIssueAlerts]}},
         "priority":10
@@ -294,7 +295,7 @@ export const RULES = [
         "deps":{
             project:{
                 "sdk":{
-                    [DEPENDENCY_TYPES.sdk_platform]:["mobile"]
+                    [DEPENDENCY_TYPES.sdk_platform]:[PlatformDetectors.isPlatformMobile]
                 },
                 "issue":[WorkflowIssueDetectors.isUsingOwnership]}},
         "priority":5
@@ -304,7 +305,7 @@ export const RULES = [
         "deps":{
             project:{
                 "sdk":{
-                    [DEPENDENCY_TYPES.sdk_platform]:['javascript']
+                    [DEPENDENCY_TYPES.sdk_platform]:[PlatformDetectors.isPlatformJavascript]
             },
                 "issue":[ReleaseIssueDetectors.isUploadingArtifactsSourcemaps]}},
         "priority":1
@@ -314,7 +315,7 @@ export const RULES = [
         "deps":{
             project:{
                 "sdk":{
-                    [DEPENDENCY_TYPES.sdk_platform]:['frontend','backend']
+                    [DEPENDENCY_TYPES.sdk_platform]:[PlatformDetectors.isPlatformFrontend,PlatformDetectors.isPlatformBackend]
             },
                 "issue":[QuotaIssueDetectors.isUsingBaseTxn]}},
         "priority":8
@@ -323,7 +324,7 @@ export const RULES = [
         "body":"Dashboards combine all sentry events into one consistent view for your team. Consider centralizing new crashes, owned issues, and trace/performance metrics that are important.",
         "deps":{project:{
             [DEPENDENCY_TYPES.sdk]:{
-                [DEPENDENCY_TYPES.sdk_platform]:[SDK_TYPES.mobile]
+                [DEPENDENCY_TYPES.sdk_platform]:[PlatformDetectors.isPlatformMobile]
             },
             "issue":[WorkflowIssueDetectors.isUsingDashboards]}},
         "priority":10
