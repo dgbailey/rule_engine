@@ -36,15 +36,7 @@ export class RuleDependencyNode {
     this.depEvaluator = nodeDetails.depEvaluator;
     this.children = [];
   }
-  dependencyTypeHelper() {
-   
-    const topLevelDeps = this._peekDeps();
-
-    if (topLevelDeps.length === 1 && topLevelDeps[0] === DEPENDENCY_TYPES.org) {
-      return DEPENDENCY_TYPES.org;
-    }
-    return DEPENDENCY_TYPES.project;
-  }
+  
   _peekDeps() {
     return Array.isArray(this.deps) ? this.deps : Object.keys(this.deps);
   }
