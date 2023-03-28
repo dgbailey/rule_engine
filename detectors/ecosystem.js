@@ -1,20 +1,21 @@
-export function hasIntegrationVcs(accountDataApi){
+
+export function isIntegratedVcs(accountDataApi){
     return accountDataApi.PROJECT_API.hasIntegrationVCS()
 
 }
 
-export function hasIntegrationsAlerting(accountDataApi){
+export function isIntegratedAlerting(accountDataApi){
     return accountDataApi.PROJECT_API.hasIntegrationsAlerting()
 }
 
-export function hasOrgIntegrationVcs(accountDataApi){
+export function isOrgIntegratedVcs(accountDataApi){
     return accountDataApi.ORG_API.hasIntegrationVCS()
 }
 
-export function hasOrgIntegrationsAlerting(accountDataApi){
+export function isOrgIntegratedAlerting(accountDataApi){
     return accountDataApi.ORG_API.hasIntegrationsAlerting()
 }
 
-export function hasOrgIntegrationsSso(accountDataApi){
+export function isOrgIntegratedSso(accountDataApi){
     return accountDataApi.ORG_API.hasIntegrationsSSO()
 }

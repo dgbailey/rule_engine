@@ -1,7 +1,8 @@
-export function hasUtilizedBaseTxn(accountDataApi){
+
+export function isUsingBaseTxn(accountDataApi){
     return accountDataApi.PROJECT_API.hasBaseTransactions()
 }
 
-export function hasHighDroppedErrors(accountDataApi){
-    return accountDataApi.PROJECT_API.hasDropped()
+export function isDroppingErrors(accountDataApi){
+    return !accountDataApi.PROJECT_API.hasDropped()
 }

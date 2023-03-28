@@ -1,26 +1,22 @@
-/**
- * Detector functions follow this signature
- * detector ( accountDataApi ) return bool
- */
 
-export function hasInstrumentationHttpErrors(accountDataApi){
+export function isInstrumentedHttpErrors(accountDataApi){
     return accountDataApi.PROJECT_API.hasAndroidHttp()
 }
 
-export function hasInstrumentationDatabase(accountDataApi){
+export function isInstrumentedDatabase(accountDataApi){
     return accountDataApi.PROJECT_API.hasAndroidDb()
 }
 
-export function hasInstrumentationFileIo(accountDataApi){
+export function isInstrumentedFileIo(accountDataApi){
     //need to check naming for this Project API
     return accountDataApi.PROJECT_API.hasFileIo()
 }
 
-export function hasInstrumentationFragments(accountDataApi){
+export function isInstrumentedFragments(accountDataApi){
      //need to check naming for this Project API
     return accountDataApi.PROJECT_API.hasFragments()
 }
 
-export function hasOkhttp(accoundDataApi){
+export function isInstrumentedOkhttp(accoundDataApi){
     return accoundDataApi.PROJECT_API.hasOkhttp()
 }
