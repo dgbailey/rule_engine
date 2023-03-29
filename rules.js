@@ -110,19 +110,19 @@ export const RULES = [
         }, priority:4
 
     },
-    {
-        body:"Dashboards combine all sentry events into one consistent view for your team. Consider centralizing new crashes, owned issues, and trace/performance metrics that are important.",
-        deps:{
-            [DEPENDENCY_TYPES.project]:{
-                [DEPENDENCY_TYPES.sdk]:{
-                    [DEPENDENCY_TYPES.sdk_platform]:[PlatformDetectors.isPlatformMobile],
-                },
-                [DEPENDENCY_TYPES.issue]:[WorkflowIssueDetectors.isUsingDashboards]
+    // {//TODO: dashboards are more of an org level data point. Deps should reflect such.
+    //     body:"Dashboards combine all sentry events into one consistent view for your team. Consider centralizing new crashes, owned issues, and trace/performance metrics that are important.",
+    //     deps:{
+    //         [DEPENDENCY_TYPES.project]:{
+    //             [DEPENDENCY_TYPES.sdk]:{
+    //                 [DEPENDENCY_TYPES.sdk_platform]:[PlatformDetectors.isPlatformMobile],
+    //             },
+    //             [DEPENDENCY_TYPES.issue]:[WorkflowIssueDetectors.isUsingDashboards]
                 
-            }
-        },
-        priority:4
-    },
+    //         }
+    //     },
+    //     priority:4
+    // },
     {
         body:"Velocity based issue alerting, regressions, or for fresh issues from the most recent release are all alert types that your mobile team can take advantage of during a release",
         deps:{
@@ -169,7 +169,7 @@ export const RULES = [
         priority:0
     },
     {
-        body:"None of projects leverage real time alerting for issues. Consider adding a baseline for alert visibility to track new high volume issues & regressions.",
+        body:"Your project doesn't leverage real time alerting for issues. Consider adding a baseline for alert visibility to track new high volume issues & regressions.",
         deps:{
             [DEPENDENCY_TYPES.project]:{
                 [DEPENDENCY_TYPES.issue]:[
@@ -310,25 +310,25 @@ export const RULES = [
                 "issue":[ReleaseIssueDetectors.isUploadingArtifactsSourcemaps]}},
         "priority":1
     },
-    {
-        "body":"Our tracing product allows you to identify bottlenecks & correlate errors directly in the Senty UI. You have some projects that might be good candidates for this.",
-        "deps":{
-            project:{
-                "sdk":{
-                    [DEPENDENCY_TYPES.sdk_platform]:[PlatformDetectors.isPlatformFrontend,PlatformDetectors.isPlatformBackend]
-            },
-                "issue":[QuotaIssueDetectors.isUsingBaseTxn]}},
-        "priority":8
-    },
-    {
-        "body":"Dashboards combine all sentry events into one consistent view for your team. Consider centralizing new crashes, owned issues, and trace/performance metrics that are important.",
-        "deps":{project:{
-            [DEPENDENCY_TYPES.sdk]:{
-                [DEPENDENCY_TYPES.sdk_platform]:[PlatformDetectors.isPlatformMobile]
-            },
-            "issue":[WorkflowIssueDetectors.isUsingDashboards]}},
-        "priority":10
-    },
+    // {TODO: How can we make global statements about the FE/BE ishness of an org?
+    //     "body":"Our tracing product allows you to identify bottlenecks & correlate errors directly in the Senty UI. You have some projects that might be good candidates for this.",
+    //     "deps":{
+    //         project:{
+    //             "sdk":{
+    //                 [DEPENDENCY_TYPES.sdk_platform]:[PlatformDetectors.isPlatformFrontend,PlatformDetectors.isPlatformBackend]
+    //         },
+    //             "issue":[QuotaIssueDetectors.isUsingBaseTxn]}},
+    //     "priority":8
+    // },
+    // {
+    //     "body":"Dashboards combine all sentry events into one consistent view for your team. Consider centralizing new crashes, owned issues, and trace/performance metrics that are important.",
+    //     "deps":{project:{
+    //         [DEPENDENCY_TYPES.sdk]:{
+    //             [DEPENDENCY_TYPES.sdk_platform]:[PlatformDetectors.isPlatformMobile]
+    //         },
+    //         "issue":[WorkflowIssueDetectors.isUsingDashboards]}},
+    //     "priority":10
+    // },
     {
         "body":"Issues are best owned within Sentry. Assigning issues routes notifications and issues directly to those most apt to fix them. You can even have Sentry do assignment automatically for you.",
         "deps":{project:{"issue":[WorkflowIssueDetectors.isUsingIssueAssignment]}},

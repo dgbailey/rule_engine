@@ -3,29 +3,30 @@ import {PLATFORM} from "../types.js"
 
 
 export function isPlatformAndroid(accountDataApi){     
-    let projectPlatform = accountDataApi.PROJECT_API.getSdks()
-    return projectPlatform.some((p) => p === PLATFORM.android)
+    return accountDataApi.PROJECT_API.getSdks()=== PLATFORM.android
 }
 
 export function isPlatformJavascript(accountDataApi){
-    let projectPlatform = accountDataApi.PROJECT_API.getSdks()
-    return projectPlatform.some((p) => p === PLATFORM.javascript)
+    
+    return accountDataApi.PROJECT_API.getSdks() === PLATFORM.javascript
 
 }
 
 export function isPlatformReactNative(accountDataApi){
-    let projectPlatform = accountDataApi.PROJECT_API.getSdks()
-    return projectPlatform.some((p) => p === PLATFORM["react-native"])
+    return accountDataApi.PROJECT_API.getSdks() === PLATFORM["react-native"]
+   
 }
 export function isPlatformIos(accountDataApi){
-    //fix
-    let projectPlatform = accountDataApi.PROJECT_API.getSdks()
-    return projectPlatform.some((p) => p === PLATFORM.apple)
+
+    const variants = [PLATFORM.swift,PLATFORM["cocoa-objc"],PLATFORM["cocoa-swift"]]
+    
+    return  variants.some((v) => v === accountDataApi.PROJECT_API.getSdks())
 
 }
 export function isPlatformMobile(accountDataApi){
     //hack for now
-    return true
+    //isMobile
+    return accountDataApi.PROJECT_API.isMobile()
 }
 
 export function isPlatformFrontend(accountDataApi){

@@ -16,9 +16,6 @@ const case_a = [
 
     },
     {
-        body:"Dashboards combine all sentry events into one consistent view for your team. Consider centralizing new crashes, owned issues, and trace/performance metrics that are important.",
-    },
-    {
         body:"Velocity based issue alerting, regressions, or for fresh issues from the most recent release are all alert types that your mobile team can take advantage of during a release",
        
     },
@@ -32,7 +29,7 @@ const case_a = [
         
     },
     {
-        body:"None of projects leverage real time alerting for issues. Consider adding a baseline for alert visibility to track new high volume issues & regressions.",
+        body:"Your project doesn't leverage real time alerting for issues. Consider adding a baseline for alert visibility to track new high volume issues & regressions.",
         
     },
     {
@@ -61,14 +58,6 @@ const case_a = [
        
     },
     {
-        "body":"There are benefits to uploading sourcemaps directly to Sentry via our API. You can improve the consistency & reliability of human readable stacktraces in your project. Exposing sensitive URLs is generally not ideal.",
-        
-    },
-    {
-        "body":"Dashboards combine all sentry events into one consistent view for your team. Consider centralizing new crashes, owned issues, and trace/performance metrics that are important.",
-        
-    },
-    {
         "body":"Issues are best owned within Sentry. Assigning issues routes notifications and issues directly to those most apt to fix them. You can even have Sentry do assignment automatically for you.",
         
     },
@@ -76,6 +65,9 @@ const case_a = [
         "body":"Dropping events can impact your visibility of issues. Consider using Discover to triage your noisiest issues or identify other good candidates for filtering.",
     
     },
+    {body: 'VCS allows organizations & their teams to triage more efficiently by adding commit metadata to Senry issues. We recommend configuring this when possible.'},
+    {body: 'How do your teams get notified in real time to issues? Integrate your current alerting tools with Sentry, or take advantage of webhooks.'},
+    {body: 'Sentry supports sso for a select group of providers. Streamline your onboarding process using this integration or our generic auth provider.'}
     ]
 
 const expected_rules = case_a.reduce((m,mock_rule) => {m[mock_rule.body] = true; return m},m)
@@ -87,10 +79,10 @@ assert(case_a.length === o["test_name_A"].length, "test rule lengths equal",case
 
 function assert(condition, message, input, expected) {
     if (!condition) {
-        console.log("Failed: " + message);
+        console.log("Failed against mock_project_a: " + message);
         console.log(input)
         console.log(expected)
         return
     }
-    console.log("Passed: " + message)
+    console.log("Passed Failed against mock_project_a: " + message)
 }

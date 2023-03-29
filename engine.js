@@ -131,13 +131,16 @@ export class Engine {
 
           //Log error if dataApi undefined for future additions
           /*
-            For now the two cases are sdk platform evaluators and all others. In most, if not all other cases, true is an indication of a positive signal (doesn't have issue).
+            Temporary: For now the two cases are sdk platform evaluators and all others. In most, if not all other cases, true is an indication of a positive signal (doesn't have issue).
           */
           console.error(`Unable to access property [${prop}] for data API. Check that detector is defined correctly.`)
           switch(prop){
             case "getSdks":
-       
               return () => []
+            case "hasDropped":
+              return () => false
+            case "hasBaseTransactions":
+              return () => false
             default:
               return () => true
           }
@@ -382,7 +385,8 @@ export const mockAccount = {
         hasFileIo: () => false,
         hasAndroidHttp: () => false,
         hasFragments: () => false,
-        // getSdks: () => ["android", "javascript", "java"],
+        getSdks: () => "android",
+        isMobile: () => true,
         hasOwnership: () => false,
         hasEnv: () => false,
         hasMetricAlert: () => false,
@@ -403,12 +407,13 @@ export const mockAccount = {
       {
         name: "test_name_B",
         hasReleases: () => true,
+        isMobile: () => true,
         hasOkhttp: () => true,
         hasAndroidDb: () => true,
         hasFileIo: () => true,
         hasAndroidHttp: () => true,
         hasFragments: () => true,
-        getSdks: () => ["android", "javascript", "java"],
+        getSdks: () => "javascript",
         hasOwnership: () => false,
         hasEnv: () => false,
         hasMetricAlert: () => false,
