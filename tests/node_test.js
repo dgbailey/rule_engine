@@ -1,4 +1,3 @@
-
 import { Engine,EngineOptions } from "../engine.js";
 
 let e = new Engine(EngineOptions);

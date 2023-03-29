@@ -2,10 +2,10 @@
 ```
 //chrome-extension.js
 
-const {RULE_ENGINE} = import('./engine.js');
+import {RULE_ENGINE} from('./engine.js');
 
 let accountInfo = await fetchInfo(//stuff);
 
-let outReach = RULE_ENGINE.process(accountInfo);
+let outReach = RULE_ENGINE.generateOutboundForAccount(accountInfo);
 
 ```
