@@ -84,5 +84,5 @@ function assert(condition, message, input, expected) {
         console.log(expected)
         return
     }
-    console.log("Passed Failed against mock_project_a: " + message)
+    console.log("Passed against mock_project_a: " + message)
 }
